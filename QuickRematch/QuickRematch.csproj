@@ -30,9 +30,23 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ShowLog|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\ShowLog\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\LLBlaze\LLBlaze_Data\Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\LLBlaze\LLBlaze_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="ModMenu">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\LLBlaze\LLBlaze_Data\Managed\ModMenu.dll</HintPath>
@@ -261,6 +275,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>Xcopy $(TargetPath) "C:\Users\Dazer\Desktop\LLBMM 1.3.1\mods\$(ProjectName)" /y</PostBuildEvent>
+    <PostBuildEvent>Xcopy $(TargetPath) "C:\Users\Dazer\Desktop\LLBMM 1.3.1\mods\$(ProjectName)" /y
+Xcopy $(TargetPath) "C:\Program Files (x86)\Steam\steamapps\common\LLBlaze\LLBlaze_Data\Managed" /y</PostBuildEvent>
   </PropertyGroup>
 </Project>

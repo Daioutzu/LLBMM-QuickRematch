@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LLHandlers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,12 +7,21 @@ using System.Threading.Tasks;
 
 namespace QuickRematch
 {
-#if DEBUG
+
     static class BlazeUnobfuscated
     {
         static public JOFJHDJHJGI CurrentGameState => DNPFJHMAIBP.HHMOGKIMBNM();
         static public bool isOnline => JOMBNFKIHIC.GDNFJCCCKDM;
         static public OnlineMode onlineMode => JOMBNFKIHIC.EAENFOJNNGP;
+        static public bool IsUnlocked(Stage stage)
+        {
+            return EPCDKLCABNC.KFFJOEAJLEH(stage);
+        }
+
+        public static bool IsAvaliableForUnlocking(Character character, CharacterVariant variant)
+        {
+            return EPCDKLCABNC.ENLLEDKHNAH(character, variant);
+        }
 
         public enum GameState
         {
@@ -55,6 +65,5 @@ namespace QuickRematch
         }
 
     } 
-#endif
 
 }

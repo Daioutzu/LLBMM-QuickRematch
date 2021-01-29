@@ -1,4 +1,5 @@
-﻿using LLScreen;
+﻿//#define DebugLog
+using LLScreen;
 using Multiplayer;
 using System;
 using System.Collections.Generic;
@@ -12,17 +13,12 @@ namespace QuickRematch
     class CharacterSelector : MonoBehaviour
     {
 
-        public void Initialize(Character _character, CharacterVariant _variant)
+        public void Init(Character _character, CharacterVariant _variant)
         {
             playerIndex = P2P.localPeer?.playerNr ?? 0;
             player = ALDOKEMAOMB.MNOLFHGAIMC(playerIndex);
             character = _character;
             variant = _variant;
-        }
-
-        void OnDestroy()
-        {
-
         }
 
         public static Character prevCharacter { get; private set; } = Character.NONE;
@@ -32,8 +28,8 @@ namespace QuickRematch
         ALDOKEMAOMB player;
         bool characterSelected;
         bool variantSelected;
-        public Character character { get; private set; }
-        public CharacterVariant variant { get; private set; }
+        Character character;
+        CharacterVariant variant;
 
         void Update()
         {
@@ -44,16 +40,19 @@ namespace QuickRematch
                     if (player.LALEEFJMMLH != prevCharacter)
                     {
                         prevCharacter = player.LALEEFJMMLH;
-                        Debug.Log($"[LLBMM] character set {prevCharacter}");
                     }
                     else if (player.AIINAIDBHJI != prevVariant)
                     {
                         prevVariant = player.AIINAIDBHJI;
-                        Debug.Log($"[LLBMM] variant set {prevVariant}");
                     }
                 }
 
                 if (prevCharacter == Character.NONE) { return; }
+
+                if (player.AIINAIDBHJI == variant)
+                {
+                    variantSelected = true;
+                }
 
                 if (player.CHNGAKOIJFE == true && variantSelected == false)
                 {
@@ -64,12 +63,23 @@ namespace QuickRematch
                         player.AIINAIDBHJI = list[varIndex - 1];
                         CharacterButtonPress(playerIndex);
                     }
+#if DebugLog
+                    Debug.Log("[LLBMM] (debug) Variant Button Pushed");
+#endif
                     variantSelected = true;
                 }
 
-                if (player.PNHOIDECPJE == true && characterSelected == false)
+                if (player.LALEEFJMMLH  == character)
+                {
+                    characterSelected = true;
+                }
+
+                if (player.CHNGAKOIJFE == false && player.PNHOIDECPJE == true && characterSelected == false)
                 {
                     CharacterButtonPress(playerIndex);
+#if DebugLog
+                    Debug.Log("[LLBMM] (debug) Character Button Pushed");
+#endif
                     characterSelected = true;
                 }
             }
@@ -82,7 +92,7 @@ namespace QuickRematch
 
         void CharacterButtonPress(int playerIndex)
         {
-            var screenPlayers = (UIScreen.currentScreens[0] as ScreenPlayers);
+            var screenPlayers = UIScreen.currentScreens[0] as ScreenPlayers;
 
             for (int i = 0; i <= screenPlayers.pnCharacterButtons.childCount - 1; i++)
             {
