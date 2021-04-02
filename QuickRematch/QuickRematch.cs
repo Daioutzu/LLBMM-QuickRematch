@@ -14,7 +14,7 @@ namespace QuickRematch
     class QuickRematch : MonoBehaviour
     {
 
-        private const string modVersion = "1.0.0";
+        private const string modVersion = "1.0.1";
         private const string repositoryOwner = "Daioutzu";
         private const string repositoryName = "LLBMM-QuickRematch";
 

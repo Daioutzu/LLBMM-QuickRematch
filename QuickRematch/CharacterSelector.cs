@@ -16,7 +16,7 @@ namespace QuickRematch
         public void Init(Character _character, CharacterVariant _variant)
         {
             playerIndex = P2P.localPeer?.playerNr ?? 0;
-            player = ALDOKEMAOMB.MNOLFHGAIMC(playerIndex);
+            player = ALDOKEMAOMB.BJDPHEHJJJK(playerIndex);
             character = _character;
             variant = _variant;
         }
