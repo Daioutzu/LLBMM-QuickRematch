@@ -8,39 +8,50 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
+using BepInEx;
+using BepInEx.Configuration;
+using LLBML;
 
 namespace QuickRematch
 {
-    class QuickRematch : MonoBehaviour
+    [BepInPlugin(PluginInfos.PLUGIN_ID, PluginInfos.PLUGIN_NAME, PluginInfos.PLUGIN_VERSION)]
+    [BepInDependency(LLBML.PluginInfos.PLUGIN_ID, BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("no.mrgentle.plugins.llb.modmenu", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInProcess("LLBlaze.exe")]
+    class QuickRematch : BaseUnityPlugin
     {
-
-        private const string modVersion = "1.0.1";
+        #region legacystrings
+        private const string modVersion = PluginInfos.PLUGIN_VERSION;
         private const string repositoryOwner = "Daioutzu";
         private const string repositoryName = "LLBMM-QuickRematch";
+        #endregion
 
-        public static QuickRematch Instance { get; private set; }
-        public static ModMenuIntegration MMI { get; private set; }
+        public static QuickRematch Instance { get; set;}
+        public ConfigEntry<bool> autoSelectCharacter;
+        public ConfigEntry<bool> autoRematch;
+        public ConfigEntry<int> rematchTimer;
 
-        public static void Initialize()
+
+        void Awake()
         {
-            GameObject gameObject = new GameObject("QuickRematch"); //The game object is what we use to interact with our mod
-            Instance = gameObject.AddComponent<QuickRematch>();
-            DontDestroyOnLoad(gameObject); // Makes sure our game object isn't destroyed
+            AddModOptions(this.Config);
+            Instance = this;
             Debug.Log("[LLBMM] QuickRematch: Intitialized");
         }
 
         void Start()
         {
-            if (MMI == null) { MMI = gameObject.AddComponent<ModMenuIntegration>(); Debug.Log($"[LLBMM] {Instance.name}: Added GameObject \"ModMenuIntegration\""); }
-            MMI.OnInitConfig += AddModOptions;
-            Debug.Log($"[LLBMM] {Instance.name} Started");
+            Logger.LogInfo($"[LLBMM] {PluginInfos.PLUGIN_NAME} Started");
+
+            LLBML.Utils.ModDependenciesUtils.RegisterToModMenu(this.Info);
         }
 
-        static void AddModOptions(ModMenuIntegration MMI)
+        void AddModOptions(ConfigFile config)
         {
-            MMI.AddToWriteQueue("(bool)autoCharacterSelector", "true");
-            MMI.AddToWriteQueue("(bool)autoRematcher", "true");
-            MMI.AddToWriteQueue("(slider)rematchTimer", "2|0|6");
+            autoSelectCharacter = config.Bind<bool>("Toggles", "autoSelectCharacter", true);
+            autoRematch = config.Bind<bool>("Toggles", "autoRematch", true);
+            rematchTimer = config.Bind<int>("Toggles", "rematchTimer", 2,
+                new ConfigDescription("", new AcceptableValueRange<int>(0, 6)));
         }
 
         void Update()
@@ -67,8 +78,6 @@ namespace QuickRematch
             SetFocuToStage();
         }
 #endif
-        bool autoSelectCharacter = true;
-        bool autoRematcherToggle = true;
 #if PlayerStage
         static private void Place(LLButton button, Vector2 pos, Vector3 scale)
         {
@@ -184,10 +193,6 @@ namespace QuickRematch
 
         void CreateCharacterSelector()
         {
-            if (MMI != null)
-            {
-                autoSelectCharacter = MMI.GetTrueFalse(MMI.configBools["(bool)autoCharacterSelector"]); ;
-            }
 #if PlayerStage
             if (UIScreen.currentScreens[1]?.screenType == ScreenType.PLAYERS_STAGE && Input.GetKeyDown(KeyCode.LeftShift))
             {
@@ -279,13 +284,13 @@ namespace QuickRematch
 
             }
 #endif
-            if (autoSelectCharacter && UIScreen.currentScreens[0]?.screenType == ScreenType.PLAYERS && (P2P.localPeer?.playerNr > -1 || JOMBNFKIHIC.GDNFJCCCKDM == false))
+            if (autoSelectCharacter.Value && ScreenApi.CurrentScreens[0]?.screenType == ScreenType.PLAYERS && (P2P.localPeer?.playerNr > -1 || JOMBNFKIHIC.GDNFJCCCKDM == false))
             {
-                if (UIScreen.currentScreens[0]?.GetComponent<CharacterSelector>() == null)
+                if (ScreenApi.CurrentScreens[0]?.GetComponent<CharacterSelector>() == null)
                 {
-                    var characterSelector = UIScreen.currentScreens[0].gameObject.AddComponent<CharacterSelector>();
+                    var characterSelector = ScreenApi.CurrentScreens[0].gameObject.AddComponent<CharacterSelector>();
                     characterSelector.Init(CharacterSelector.prevCharacter, CharacterSelector.prevVariant);
-                    characterSelector.transform.SetParent(UIScreen.currentScreens[0].transform);
+                    characterSelector.transform.SetParent(ScreenApi.CurrentScreens[0].transform);
 #if DebugLog
                     Debug.Log("[LLBMM] CharacterSelector Created");
 #endif
@@ -305,16 +310,16 @@ namespace QuickRematch
         static void PlayerScreenControls()
         {
 
-            if (UIScreen.currentScreens[0]?.screenType == ScreenType.PLAYERS)
+            if (ScreenApi.CurrentScreens[0]?.screenType == ScreenType.PLAYERS)
             {
-                ScreenPlayers screenPlayers = UIScreen.currentScreens[0] as ScreenPlayers;
+                ScreenPlayers screenPlayers = ScreenApi.CurrentScreens[0] as ScreenPlayers;
                 if (P2P.isHost == true || P2P.localPeer == null)
                 {
                     if (Controller.all.GetButtonDown(InputAction.EXPRESS_UP))
                     {
-                        if (UIScreen.currentScreens[1]?.screenType == ScreenType.PLAYERS_SETTINGS)
+                        if (ScreenApi.CurrentScreens[1]?.screenType == ScreenType.PLAYERS_SETTINGS)
                         {
-                            (UIScreen.currentScreens[1] as ScreenPlayersSettings).btBack.onClick(0);
+                            (ScreenApi.CurrentScreens[1] as ScreenPlayersSettings).btBack.onClick(0);
                         }
                         else
                         {
@@ -353,21 +358,16 @@ namespace QuickRematch
 
         void CreateRematcher()
         {
-            if (MMI != null)
+            if (autoRematch.Value && !UIScreen.loadingScreenActive && ScreenApi.CurrentScreens[0]?.screenType == ScreenType.GAME_RESULTS)
             {
-                autoRematcherToggle = MMI.GetTrueFalse(MMI.configBools["(bool)autoRematcher"]);
-            }
-
-            if (autoRematcherToggle && !UIScreen.loadingScreenActive && UIScreen.currentScreens[0]?.screenType == ScreenType.GAME_RESULTS)
-            {
-                if (UIScreen.currentScreens[0]?.GetComponent<PostScreenRematcher>() == null && pendingUnlock == false)
+                if (ScreenApi.CurrentScreens[0]?.GetComponent<PostScreenRematcher>() == null && pendingUnlock == false)
                 {
-                    var postScreen = UIScreen.currentScreens[0] as PostScreen;
+                    var postScreen = ScreenApi.CurrentScreens[0] as PostScreen;
                     pendingUnlock = PostScreenRematcher.IsPendingUnlock();
                     if (postScreen.showWinner == true && pendingUnlock == false)
                     {
-                        var postScreenRematcher = UIScreen.currentScreens[0].gameObject.AddComponent<PostScreenRematcher>();
-                        postScreenRematcher.transform.SetParent(UIScreen.currentScreens[0].transform);
+                        var postScreenRematcher = ScreenApi.CurrentScreens[0].gameObject.AddComponent<PostScreenRematcher>();
+                        postScreenRematcher.transform.SetParent(ScreenApi.CurrentScreens[0].transform);
 #if DebugLog
                     Debug.Log("[LLBMM] PostScreenRematcher Created");
 #endif

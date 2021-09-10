@@ -1,12 +1,13 @@
 ﻿//#define DebugLog
-using LLScreen;
 using Multiplayer;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
+using LLScreen;
+using LLBML;
+using LLBML.Players;
 
 namespace QuickRematch
 {
@@ -16,7 +17,7 @@ namespace QuickRematch
         public void Init(Character _character, CharacterVariant _variant)
         {
             playerIndex = P2P.localPeer?.playerNr ?? 0;
-            player = ALDOKEMAOMB.BJDPHEHJJJK(playerIndex);
+            player = Player.GetPlayer(playerIndex);
             character = _character;
             variant = _variant;
         }
@@ -25,7 +26,7 @@ namespace QuickRematch
         public static CharacterVariant prevVariant { get; private set; }
 
         int playerIndex;
-        ALDOKEMAOMB player;
+        Player player;
         bool characterSelected;
         bool variantSelected;
         Character character;
@@ -33,34 +34,34 @@ namespace QuickRematch
 
         void Update()
         {
-            if (UIScreen.currentScreens[0]?.screenType == ScreenType.PLAYERS && player.PNHOIDECPJE)
+            if (ScreenApi.CurrentScreens[0]?.screenType == ScreenType.PLAYERS && player.DidJoinedMatch)
             {
-                if (player.CHNGAKOIJFE == true)
+                if (player.selected == true)
                 {
-                    if (player.LALEEFJMMLH != prevCharacter)
+                    if (player.Character != prevCharacter)
                     {
-                        prevCharacter = player.LALEEFJMMLH;
+                        prevCharacter = player.Character;
                     }
-                    else if (player.AIINAIDBHJI != prevVariant)
+                    else if (player.variant != prevVariant)
                     {
-                        prevVariant = player.AIINAIDBHJI;
+                        prevVariant = player.CharacterVariant;
                     }
                 }
 
                 if (prevCharacter == Character.NONE) { return; }
 
-                if (player.AIINAIDBHJI == variant)
+                if (player.CharacterVariant == variant)
                 {
                     variantSelected = true;
                 }
 
-                if (player.CHNGAKOIJFE == true && variantSelected == false)
+                if (player.selected == true && variantSelected == false)
                 {
-                    List<CharacterVariant> list = EPCDKLCABNC.LJBIMAPKPME(character, (!player.GAFCIHKIGNM) ? player.CJFLMDNNMIE : -1);
+                    List<CharacterVariant> list = EPCDKLCABNC.LJBIMAPKPME(character, (!player.IsLocalPeer) ? player.nr : -1);
                     if (variant != CharacterVariant.DEFAULT)
                     {
                         int varIndex = list.IndexOf(variant);
-                        player.AIINAIDBHJI = list[varIndex - 1];
+                        player.CharacterVariant = list[varIndex - 1];
                         CharacterButtonPress(playerIndex);
                     }
 #if DebugLog
@@ -69,12 +70,12 @@ namespace QuickRematch
                     variantSelected = true;
                 }
 
-                if (player.LALEEFJMMLH  == character)
+                if (player.Character  == character)
                 {
                     characterSelected = true;
                 }
 
-                if (player.CHNGAKOIJFE == false && player.PNHOIDECPJE == true && characterSelected == false)
+                if (player.selected == false && player.DidJoinedMatch == true && characterSelected == false)
                 {
                     CharacterButtonPress(playerIndex);
 #if DebugLog
@@ -92,7 +93,7 @@ namespace QuickRematch
 
         void CharacterButtonPress(int playerIndex)
         {
-            var screenPlayers = UIScreen.currentScreens[0] as ScreenPlayers;
+            var screenPlayers = ScreenApi.CurrentScreens[0] as ScreenPlayers;
 
             for (int i = 0; i <= screenPlayers.pnCharacterButtons.childCount - 1; i++)
             {

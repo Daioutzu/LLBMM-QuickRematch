@@ -1,13 +1,11 @@
-﻿using LLGUI;
+﻿
+using System;
+using UnityEngine;
+using LLGUI;
 using LLHandlers;
 using LLScreen;
 using Multiplayer;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
+using LLBML;
 
 namespace QuickRematch
 {
@@ -18,9 +16,9 @@ namespace QuickRematch
 
         public PostScreenRematcher()
         {
-            if (UIScreen.currentScreens[0]?.screenType == ScreenType.GAME_RESULTS)
+            if (ScreenApi.CurrentScreens[0]?.screenType == ScreenType.GAME_RESULTS)
             {
-                postScreen = UIScreen.currentScreens[0] as PostScreen;
+                postScreen = ScreenApi.CurrentScreens[0] as PostScreen;
             }
             else
             {
@@ -54,10 +52,7 @@ namespace QuickRematch
 
         void Awake()
         {
-            if (QuickRematch.MMI != null)
-            {
-                waitTime = (float)QuickRematch.MMI.GetSliderValue("(slider)rematchTimer");
-            }
+            waitTime = (float)QuickRematch.Instance.rematchTimer.Value;
             //rematchButton.SetActive(false);
             screenTimer = new Timer(waitTime);
             activeButton = GetButton(postScreen);
@@ -102,9 +97,9 @@ namespace QuickRematch
         public static bool IsPendingUnlock()
         {
             PostScreen updatePostScreen;
-            if (UIScreen.currentScreens[0]?.screenType == ScreenType.GAME_RESULTS)
+            if (ScreenApi.CurrentScreens[0]?.screenType == ScreenType.GAME_RESULTS)
             {
-                updatePostScreen = UIScreen.currentScreens[0] as PostScreen;
+                updatePostScreen = ScreenApi.CurrentScreens[0] as PostScreen;
             }
             else
             {
