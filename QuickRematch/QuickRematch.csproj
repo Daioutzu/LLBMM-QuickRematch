@@ -23,21 +23,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ShowLog|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\ShowLog\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -55,10 +44,6 @@
     </Reference>
     <Reference Include="LLBModdingLib">
       <HintPath>Libs\LLBModdingLib.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ModMenu">
-      <HintPath>Libs\ModMenu.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
@@ -79,13 +64,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CharacterSelector.cs" />
-    <Compile Include="BlazeUnobfuscated.cs" />
-    <Compile Include="PostScreenRematcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QuickRematch.cs" />
-    <Compile Include="Timer.cs" />
     <Compile Include="PluginInfos.cs" />
+    <Compile Include="HarmonyPatches.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
