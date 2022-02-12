@@ -63,26 +63,6 @@ namespace QuickRematch
             LobbyEvents.OnUserSkinClick += OnUserSkinClick;
         }
 
-        void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.Y))
-            {
-                Logger.LogInfo("Sending Ready");
-                GameStates.Send(new Message(Msg.SEL_READY, NetworkApi.LocalPlayerNumber, NetworkApi.LocalPlayerNumber));
-
-            }
-            if (Input.GetKeyDown(KeyCode.U))
-            {
-                Logger.LogInfo("Sending Refresh");
-                GameStatesLobbyUtils.RefreshLocalPlayerState();
-
-            }
-            if (Input.GetKeyDown(KeyCode.I))
-            {
-                GameStatesLobbyUtils.MakeSureReadyIs(true);
-            }
-        }
-
         void InitModOptions(ConfigFile config)
         {
             autoRematch = config.Bind<bool>("Toggles", "autoRematch", true);
@@ -111,6 +91,11 @@ namespace QuickRematch
         {
             yield return new WaitForEndOfFrame();
             yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+            //shitty fix, find a better way
             StoreCharacterSelected(player);
         }
 
@@ -155,14 +140,9 @@ namespace QuickRematch
             {
                 Log.LogInfo("Restoring variant as well");
                 player.CharacterVariant = variantSelected;
-                //Instance.StartCoroutine(SelectSkinNextFrame());
             }
 
             GameStatesLobbyUtils.RefreshLocalPlayerState();
-            /*
-            var gameStatesLobbyOnline = GameStatesLobbyUtils.GetOnlineLobby();
-            AccessTools.Method(typeof(HDLIJDBFGKN), "JPNNBHNHHJC").Invoke(gameStatesLobbyOnline, new object[] { });
-            AccessTools.Field(typeof(HDLIJDBFGKN), "BOEPIJPONCK").SetValue(gameStatesLobbyOnline, true);*/
         }
 
 
@@ -179,17 +159,6 @@ namespace QuickRematch
             {
                 Log.LogDebug("ReReady was disabled.");
             }
-        }
-
-        public static IEnumerator SelectSkinNextFrame()
-        {
-            yield return new WaitForEndOfFrame();
-            GameStates.Send(Msg.SEL_SKIN, NetworkApi.LocalPlayerNumber, NetworkApi.LocalPlayerNumber);
-        }
-        public static IEnumerator WaitThenDo(float dur, Action callback)
-        {
-            yield return new WaitForSeconds(dur);
-            callback.Invoke();
         }
     }
 }
