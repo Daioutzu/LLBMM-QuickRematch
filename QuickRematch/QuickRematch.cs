@@ -95,7 +95,7 @@ namespace QuickRematch
             yield return new WaitForEndOfFrame();
             yield return new WaitForEndOfFrame();
             yield return new WaitForEndOfFrame();
-            //shitty fix, find a better way
+            //TODO shitty fix, find a better way
             StoreCharacterSelected(player);
         }
 
@@ -151,8 +151,11 @@ namespace QuickRematch
             if (autoReready.Value)
             {
                 Log.LogInfo("Quick Readying");
-                GameStatesLobbyUtils.MakeSureReadyIs(true, false);
-                Player.GetLocalPlayer().ready = true;
+                if (GameStates.IsInOnlineLobby())
+                {
+                    GameStatesLobbyUtils.MakeSureReadyIs(true, false);
+                    Player.GetLocalPlayer().ready = true;
+                }
                 GameStatesLobbyUtils.RefreshLocalPlayerState();
             }
             else

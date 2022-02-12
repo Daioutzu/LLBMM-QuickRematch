@@ -13,7 +13,7 @@ namespace QuickRematch
     public static class CharacterRepicker_Patch
     {
 
-        [HarmonyPatch(typeof(ScreenPlayersStage), nameof(ScreenPlayersStage.OnOpen))]
+        [HarmonyPatch(typeof(ScreenGameHud), nameof(ScreenPlayersStage.OnOpen))]
         [HarmonyPostfix]
         public static void SaveCharacter()
         {
