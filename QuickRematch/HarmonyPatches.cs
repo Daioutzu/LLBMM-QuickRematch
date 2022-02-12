@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections;
+using UnityEngine;
 using HarmonyLib;
 using LLScreen;
 using LLBML;
+using LLBML.States;
 using LLBML.Players;
 
 namespace QuickRematch
@@ -15,30 +17,100 @@ namespace QuickRematch
         [HarmonyPostfix]
         public static void SaveCharacter()
         {
-            QuickRematch.StoreCharacterSelected(Player.GetPlayer(NetworkApi.LocalPlayerNumber));
-            QuickRematch.Log.LogInfo("Saving char: " + QuickRematch.characterSelected +" | " + QuickRematch.variantSelected);
+            QuickRematch.StoreCharacterSelected(Player.GetLocalPlayer());
         }
-
+        /*
         [HarmonyPatch(typeof(ALDOKEMAOMB), nameof(ALDOKEMAOMB.EKNFACPOJCM))] // Player.JoinMatch
         [HarmonyPostfix]
-        public static void Reselect_Character(ALDOKEMAOMB __instance)
+        public static void JoinMatch_ReselectCharacter(ref ALDOKEMAOMB __instance)
         {
-            if (!QuickRematch.autoSelectCharacter.Value || QuickRematch.characterSelected == Character.NONE)
-                return;
-
             Player player = __instance;
             if (player.nr == NetworkApi.LocalPlayerNumber)
             {
-                QuickRematch.Log.LogInfo("Restoring char to " + QuickRematch.characterSelected + " | " + QuickRematch.variantSelected);
-                StateApi.SendMessage(Msg.SEL_CHAR, player.nr, (int)QuickRematch.characterSelected);
-                if (QuickRematch.characterSelected != Character.RANDOM && QuickRematch.variantSelected != CharacterVariant.DEFAULT)
+                QuickRematch.RestoreCharacter(player);
+                if (GameStates.IsInOnlineLobby())
                 {
-                    Player.GetPlayer(player.nr).CharacterVariant = QuickRematch.variantSelected - 1;
-                    StateApi.SendMessage(Msg.SEL_SKIN, player.nr, player.nr);
-                    //StateApi.SendMessage(Msg.SEL_READY, player.nr, player.nr);
+                    QuickRematch.QuickReready();
                 }
             }
         }
+        */
+
+        private static bool doRefresh = false;
+        [HarmonyPatch(typeof(HDLIJDBFGKN), "GDHHGDONCKN")] // GameStatesLobbyOnline.ReceivedPlayerState
+        [HarmonyPrefix]
+        public static bool ReceivePlayerState_Prefix(JMLEHJLKPAC CNPOFPNNPAB, bool IDPADEAGKPJ)
+        {
+            bool inResults = IDPADEAGKPJ;
+            if (inResults)
+                return true;
+            PlayerLobbyState pls = CNPOFPNNPAB;
+            if (pls.playerNr == NetworkApi.LocalPlayerNumber)
+            {
+                doRefresh = 
+                    pls.character != (Character)QuickRematch.storedCharacter.Value ||
+                    pls.variant != (CharacterVariant)QuickRematch.storedVariant.Value ||
+                    !pls.ready;
+            }
+            return true;
+        }
+
+        [HarmonyPatch(typeof(HDLIJDBFGKN), "GDHHGDONCKN")] // GameStatesLobbyOnline.ReceivedPlayerState
+        [HarmonyPostfix]
+        public static void ReceivePlayerState_ReselectCharacter(JMLEHJLKPAC CNPOFPNNPAB, bool IDPADEAGKPJ)
+        {
+            bool inResults = IDPADEAGKPJ;
+            if (inResults)
+                return;
+            if (doRefresh)
+            {
+                QuickRematch.RestoreCharacter(Player.GetLocalPlayer());
+                QuickRematch.QuickReready();
+                doRefresh = false;
+            }
+        }
+
+        /*
+        private static bool previousLobbyState = false;
+        private static int SetLobbyActiveCount = 0;
+        [HarmonyPatch(typeof(HDLIJDBFGKN), "ELCMCCEHBOP")] // GameStatesLobbyOnline.SetLobbyActive
+        [HarmonyPostfix]
+        public static void ReceivePlayerState_SetLobbyActive(bool __0, bool __1)
+        {
+            bool lobbyActive = __0;
+            bool forced = __1;
+            SetLobbyActiveCount++;
+            if (previousLobbyState != lobbyActive)
+            {
+                QuickRematch.Log.LogInfo("SetLobbyActive new state: " + lobbyActive + " | forced? " + forced +" | On update n" + SetLobbyActiveCount);
+                previousLobbyState = lobbyActive;
+                if (lobbyActive == true || (lobbyActive == false && forced == true))
+                {
+                    QuickRematch.RestoreCharacter(Player.GetLocalPlayer());
+                    QuickRematch.QuickReready();
+                }
+            }
+        }
+        */
+        /*
+        private static AccessTools.FieldRef<HDLIJDBFGKN, bool> fr_autoready = AccessTools.FieldRefAccess<HDLIJDBFGKN, bool>("BOEPIJPONCK");
+        [HarmonyPatch(typeof(ScreenPlayers), nameof(ScreenPlayers.ShowReadyButton))]
+        [HarmonyPostfix]
+        public static void QuickReready(ScreenPlayers __instance, int playerNr, bool visible)
+        {
+            if (visible)
+            {
+                if (!Player.GetPlayer(playerNr).ready)
+                {
+                    if (GameStates.IsInOnlineLobby() && fr_autoready.Invoke(GameStatesLobbyUtils.GetOnlineLobby()))
+                    {
+                        GameStatesLobbyUtils.MakeSureReadyIs(true, true);
+                        GameStates.Send(Msg.SEL_READY, playerNr, playerNr);
+                    }
+                }
+            }
+        }*/
+
     }
     public static class QuickRematch_Patch
     {
@@ -54,14 +126,14 @@ namespace QuickRematch
             switch (__instance.resultButtons)
             {
                 case NIPJFJKNGHO.DLPDHJFPKMJ: //ResultButtons.REMATCH_QUIT
-                    StateApi.SendMessage(new Message(Msg.SEL_REMATCH, -1, 1, null, -1));
+                    GameStates.Send(new Message(Msg.SEL_REMATCH, -1, 1, null, -1));
                     break;
                 case NIPJFJKNGHO.PJGPNEKNIGJ: //ResultButtons.CONTINUE
                 case NIPJFJKNGHO.DNDFPMJJMJC: //ResultButtons.CONTINUE_QUIT
-                    StateApi.SendMessage(Msg.START, -1, -1);
+                    GameStates.Send(Msg.START, -1, -1);
                     break;
                 default:
-                    DNPFJHMAIBP.GKBNNFEAJGO(new Message(Msg.SEL_REMATCH, -1, 0, null, -1));
+                    GameStates.Send(new Message(Msg.SEL_REMATCH, -1, 0, null, -1));
                     break;
             }
             QuickRematch.Log.LogInfo("Rematched");

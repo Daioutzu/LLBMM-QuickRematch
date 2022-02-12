@@ -1,9 +1,14 @@
 ﻿using System;
+using System.Collections;
+using UnityEngine;
 using HarmonyLib;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using LLBML;
+using LLBML.States;
 using LLBML.Players;
+using LLBML.GameEvents;
 
 namespace QuickRematch
 {
@@ -17,7 +22,11 @@ namespace QuickRematch
         public static QuickRematch Instance { get; private set; } = null;
         public static ConfigEntry<bool> autoRematch;
         public static ConfigEntry<bool> autoSelectCharacter;
+        public static ConfigEntry<bool> autoReready;
         public static ConfigEntry<bool> reselectRandom;
+        public static ConfigEntry<bool> storeCharacterOnRelaunch;
+        public static ConfigEntry<int> storedCharacter;
+        public static ConfigEntry<int> storedVariant;
 
         public static Character characterSelected = Character.NONE;
         public static CharacterVariant variantSelected = CharacterVariant.DEFAULT;
@@ -26,7 +35,7 @@ namespace QuickRematch
         {
             Instance = this;
             Log = this.Logger;
-            AddModOptions(this.Config);
+            InitModOptions(this.Config);
 
             var harmoInstance = new Harmony(PluginInfos.PLUGIN_ID);
             Logger.LogInfo("Patching QuickRematch");
@@ -39,16 +48,71 @@ namespace QuickRematch
         {
             Logger.LogInfo($"{PluginInfos.PLUGIN_NAME} Started");
 
+            if (storeCharacterOnRelaunch.Value)
+            {
+                characterSelected = (Character)storedCharacter.Value;
+                variantSelected = (CharacterVariant)storedVariant.Value;
+            }
+
             LLBML.Utils.ModDependenciesUtils.RegisterToModMenu(this.Info);
+            LobbyEvents.OnLobbyReady += (o, a) => {
+                RestoreCharacter(Player.GetLocalPlayer());
+                QuickReready();
+            };
+            LobbyEvents.OnUserCharacterPick += OnUserCharacterPick;
+            LobbyEvents.OnUserSkinClick += OnUserSkinClick;
         }
 
-        void AddModOptions(ConfigFile config)
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Y))
+            {
+                Logger.LogInfo("Sending Ready");
+                GameStates.Send(new Message(Msg.SEL_READY, NetworkApi.LocalPlayerNumber, NetworkApi.LocalPlayerNumber));
+
+            }
+            if (Input.GetKeyDown(KeyCode.U))
+            {
+                Logger.LogInfo("Sending Refresh");
+                GameStatesLobbyUtils.RefreshLocalPlayerState();
+
+            }
+            if (Input.GetKeyDown(KeyCode.I))
+            {
+                GameStatesLobbyUtils.MakeSureReadyIs(true);
+            }
+        }
+
+        void InitModOptions(ConfigFile config)
         {
             autoRematch = config.Bind<bool>("Toggles", "autoRematch", true);
             autoSelectCharacter = config.Bind<bool>("Toggles", "autoSelectCharacter", true);
+            autoReready = config.Bind<bool>("Toggles", "autoReready", true);
             reselectRandom = config.Bind<bool>("Toggles", "reselectRandom", true);
+            storeCharacterOnRelaunch = config.Bind<bool>("Toggles", "storeCharacterOnRelaunch", false);
+            storedCharacter = config.Bind<int>("Storage", "storedCharacter", (int)Character.NONE, new ConfigDescription("", null, "modmenu_hidden"));
+            storedVariant = config.Bind<int>("Storage", "storedVariant", (int)CharacterVariant.DEFAULT, new ConfigDescription("", null, "modmenu_hidden"));
         }
 
+        private void OnUserCharacterPick(PlayersCharacterButton pcb, OnUserCharacterPickArgs args)
+        {
+            this.StartCoroutine(SaveCharacterAndVariantLater(Player.GetLocalPlayer()));
+        }
+
+        private void OnUserSkinClick(PlayersSelection ps, OnUserSkinClickArgs args)
+        {
+            if (args.clickerNr == -1 || (args.clickerNr == Player.LocalPlayerNumber && args.toSkinNr == args.clickerNr))
+            {
+                this.StartCoroutine(SaveCharacterAndVariantLater(Player.GetLocalPlayer()));
+            }
+        }
+
+        private IEnumerator SaveCharacterAndVariantLater(Player player)
+        {
+            yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+            StoreCharacterSelected(player);
+        }
 
         public static void StoreCharacterSelected(Player player)
         {
@@ -62,6 +126,70 @@ namespace QuickRematch
                 characterSelected = player.Character;
                 variantSelected = player.CharacterVariant;
             }
+            StoreCharacterAndVariant(characterSelected, variantSelected);
+        }
+
+
+
+        public static void StoreCharacterAndVariant(Character character, CharacterVariant variant = CharacterVariant.DEFAULT)
+        {
+            characterSelected = character;
+            variantSelected = variant;
+            Log.LogInfo("Saving char: " + QuickRematch.characterSelected + " | " + QuickRematch.variantSelected);
+            if (storeCharacterOnRelaunch.Value)
+            {
+                storedCharacter.Value = (int)characterSelected;
+                storedVariant.Value = (int)variantSelected;
+            }
+        }
+
+        public static void RestoreCharacter(Player player)
+        {
+            if (!autoSelectCharacter.Value || characterSelected == Character.NONE)
+                return;
+
+            Log.LogInfo("Restoring char to " + characterSelected + " | " + variantSelected);
+            GameStates.DirectProcess(new Message(Msg.SEL_CHAR, player.nr, (int)characterSelected));
+            //player.Character = characterSelected;
+            if (characterSelected != Character.RANDOM && variantSelected != CharacterVariant.DEFAULT)
+            {
+                Log.LogInfo("Restoring variant as well");
+                player.CharacterVariant = variantSelected;
+                //Instance.StartCoroutine(SelectSkinNextFrame());
+            }
+
+            GameStatesLobbyUtils.RefreshLocalPlayerState();
+            /*
+            var gameStatesLobbyOnline = GameStatesLobbyUtils.GetOnlineLobby();
+            AccessTools.Method(typeof(HDLIJDBFGKN), "JPNNBHNHHJC").Invoke(gameStatesLobbyOnline, new object[] { });
+            AccessTools.Field(typeof(HDLIJDBFGKN), "BOEPIJPONCK").SetValue(gameStatesLobbyOnline, true);*/
+        }
+
+
+        public static void QuickReready()
+        {
+            if (autoReready.Value)
+            {
+                Log.LogInfo("Quick Readying");
+                GameStatesLobbyUtils.MakeSureReadyIs(true, false);
+                Player.GetLocalPlayer().ready = true;
+                GameStatesLobbyUtils.RefreshLocalPlayerState();
+            }
+            else
+            {
+                Log.LogDebug("ReReady was disabled.");
+            }
+        }
+
+        public static IEnumerator SelectSkinNextFrame()
+        {
+            yield return new WaitForEndOfFrame();
+            GameStates.Send(Msg.SEL_SKIN, NetworkApi.LocalPlayerNumber, NetworkApi.LocalPlayerNumber);
+        }
+        public static IEnumerator WaitThenDo(float dur, Action callback)
+        {
+            yield return new WaitForSeconds(dur);
+            callback.Invoke();
         }
     }
 }
